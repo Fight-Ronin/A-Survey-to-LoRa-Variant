@@ -1,7 +1,8 @@
 import json
 import os
-from datasets import load_dataset
 import ollama
+from datasets import load_dataset
+
 
 def zero_shot_gsm8k(file_name):
     ds = load_dataset("openai/gsm8k", "main")
@@ -17,12 +18,12 @@ def zero_shot_gsm8k(file_name):
         generated_answer = response['response']
         print(f"question {i} finished")
         i += 1
-        prompt = f''' 
+        prompt = f'''
         You are given a predicted answer and a ground truth solution, determinant whether the predicted answer match the ground truth answer. End your response with <True> or <False>
         predicted answer: {generated_answer}
         ground truth solution:
         {solution}
-
+        
         '''
         response = ollama.generate(model=model, prompt=prompt)
         evaluation = response['response']
@@ -59,8 +60,9 @@ def zero_shot_gsm_plus(saved_file):
 
 
 if __name__ == '__main__':
+
     zero_shot_gsm8k('zero_shot_gsm8k.jsonl')
-        
+
 
 
 
