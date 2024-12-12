@@ -1,6 +1,6 @@
 access_token.txt
 Meta-Llama-3-8B/
 Meta-Llama-3-8B-Instruct/
-finetuned_llama3_8b_adalora
-finetuned_llama3_8b_lorafa
+finetuned_llama3_8b_adalora_gsm8k
+finetuned_llama3_8b_lorafa_gsm8k
 *.npz

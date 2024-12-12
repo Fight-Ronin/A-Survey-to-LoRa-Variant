@@ -179,7 +179,7 @@ def evaluate_gsm_plus(model_dir, output_file):
 
 if __name__ == '__main__':
     model_name = "meta-llama/Meta-Llama-3-8B-Instruct"
-    output_dir = 'finetuned_llama3_8b_adalora'
+    output_dir = 'finetuned_llama3_8b_adalora_gsm8k'
 
     # Finetune and evaluate llama3 8B on gsm8k
     finetune_lora(model_name, "/home/ubuntu/llama3/A-Survey-to-LoRa-Variant/GSM8k", output_dir)
