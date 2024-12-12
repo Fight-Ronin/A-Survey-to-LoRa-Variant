@@ -1,0 +1,9 @@
+mlx>=0.8.0
+transformers
+numpy
+
+python dora.py --model /Volumes/PS2000/huggingface/hub/models--mlx-community--Meta-Llama-3-8B-Instruct-4bit/snapshots/c38b3b1f03cce0ce0ccd235e5c97b0d3d255e651 --train --iters 1400 --data /Users/jianlu/Documents/GitHub/A-Survey-to-LoRa-Variant/GSM8k --adapter-file DoRA_GSM8.npz
+python lora.py --model /Volumes/PS2000/huggingface/hub/models--mlx-community--Meta-Llama-3-8B-Instruct-4bit/snapshots/c38b3b1f03cce0ce0ccd235e5c97b0d3d255e651 --train --iters 1000 --data /Users/jianlu/Documents/GitHub/A-Survey-to-LoRa-Variant/GSM8k
+python lora.py --model /Volumes/PS2000/huggingface/hub/models--mlx-community--Meta-Llama-3-8B-Instruct-4bit/snapshots/c38b3b1f03cce0ce0ccd235e5c97b0d3d255e651 \
+               --adapter-file /Users/jianlu/Documents/GitHub/mlx-examples/lora/LoRA_GSMP_adapters.npz\
+               --max-tokens 200\
