@@ -3,7 +3,7 @@ import json
 import torch
 import ollama
 from datasets import load_dataset
-from peft import LoraConfig, get_peft_model, AdaLoraConfig, PeftModel
+from peft import LoraConfig, get_peft_model, AdaLoraConfig
 from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, DataCollatorWithPadding
 
 
@@ -22,7 +22,7 @@ def get_token_from_file(file_path):
     return token
 
 
-def finetune_lora(model_dir, data_dir, output_dir, init_r=128, target_r=8, lora_alpha=32, lora_dropout=0.1,
+def finetune_lora(model_dir, data_dir, output_dir, init_r=12, target_r=4, lora_alpha=32, lora_dropout=0.1,
                   tinit=False, deltaT=10, beta1=0.9, beta2=0.999):
     # Load Dataset
     ds = load_local_dataset(data_dir)
@@ -84,7 +84,7 @@ def finetune_lora(model_dir, data_dir, output_dir, init_r=128, target_r=8, lora_
         output_dir=output_dir,
         per_device_train_batch_size=4,
         per_device_eval_batch_size=4,
-        gradient_accumulation_steps=8,
+        gradient_accumulation_steps=4,
         evaluation_strategy='steps',
         logging_steps=100,
         num_train_epochs=1,
@@ -114,63 +114,67 @@ def finetune_lora(model_dir, data_dir, output_dir, init_r=128, target_r=8, lora_
 def generate_answer(model, tokenizer, prompt, max_new_tokens=256):
     inputs = tokenizer(prompt, return_tensors='pt').to(model.device)
     with torch.no_grad():
-        output_ids = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False, temperature=None, top_p=None)
+        output_ids = model.generate(**inputs, max_new_tokens=max_new_tokens, do_sample=False)
     return tokenizer.decode(output_ids[0], skip_special_tokens=True)
 
 
-def evaluate_lora(model_name, model_dir, data_dir, output_file):
-
-    # Reload finetuned model and adapter
+def evaluate_gsm8k(model_dir, output_file):
     token = get_token_from_file('access_token.txt')
     tokenizer = AutoTokenizer.from_pretrained(model_dir, token=token)
-    base_model = AutoModelForCausalLM.from_pretrained(model_name, torch_dtype=torch.bfloat16, device_map='auto', token=token)
-    model = PeftModel.from_pretrained(base_model, model_dir)
+    model = AutoModelForCausalLM.from_pretrained(model_dir, torch_dtype=torch.bfloat16, device_map='auto', token=token)
 
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eso_token
-        tokenizer.pad_token_id = tokenizer.eos_token_id
-
-    ds = load_local_dataset(data_dir)
-    eval_ds = ds['validation']
+    ds = load_dataset('openai/gsm8k', 'main')
     f = open(output_file, 'w', encoding='utf-8')
 
     i=0
-    print(f"Total number of questions: {len(eval_ds)}")
-    true_count = 0
-    for example in eval_ds:
-        text = example['text']
-        if "Answer:" in text:
-            parts = text.split('Answer:', 1)
-            question_part = parts[0].strip()
-            answer_part = parts[1].strip()
-            question = question_part + "\nA:"
-            generated_answer_full = generate_answer(model, tokenizer, question)
+    print(f"Total number of questions: {len(ds['test'])}")
+    for q in ds['test']:
+        question = 'Q: ' + q['question'] + '\nA:'
+        solution = q['answer']
+        generated_answer_full = generate_answer(model, tokenizer, question)
+        generated_answer = generated_answer_full.replace(question, '').strip()
 
-            ollama_model = 'llama3:8b'
-            prompt = f''' 
-                    You are given a predicted answer and a ground truth solution, determinant whether the predicted answer match the ground truth answer. End your response with <True> or <False>
-                    predicted answer: {generated_answer_full}
-                    ground truth solution:
-                    {answer_part}
-                    '''
-            response = ollama.generate(model=ollama_model, prompt=prompt)
-            evaluation = response['response']
-        else:
-            generated_answer_full = generate_answer(model, tokenizer, text)
-            evaluation = '<False>'
+        # If we want to model to judge correctness
+        prompt = f''' 
+        You are given a predicted answer and a ground truth solution, determinant whether the predicted answer match the ground truth answer. End your response with <True> or <False>
+        predicted answer: {generated_answer}
+        ground truth solution:
+        {solution}
+        '''
 
-        if evaluation == '<True>':
-            true_count += 1
-        new_data = {
-            'text': text,
-            'generated_answer': generated_answer_full,
-            'evaluation': evaluation,
-        }
+        # Direct comparison
+        response = ollama.generate(model=model, prompt=prompt)
+        evaluation = response['response']
+        # Write result to file
+        new_data = {'question': q['question'], 'solution': solution, 'generated_answer': generated_answer, 'evaluation': evaluation}
         f.write(json.dumps(new_data) + '\n')
         i += 1
-        if i % 5 == 0:
-            print(f'question {i} finished, {true_count} / {i} correct, Acc: {true_count / i}')
+        print(f'question {i} finished')
+    f.close()
 
+
+def evaluate_gsm_plus(model_dir, output_file):
+    token = get_token_from_file('access_token.txt')
+    tokenizer = AutoTokenizer.from_pretrained(model_dir, token=token)
+    model = AutoModelForCausalLM.from_pretrained(model_dir, torch_dtype=torch.bfloat16, device_map='auto', token=token)
+
+    ds = load_dataset('qintongli/GSM-Plus')
+
+    f = open(output_file, 'w', encoding='utf-8')
+    i=0
+    print(f"Total number of questions: {len(ds['testmini'])}")
+    for q in ds['testmini']:
+        question = 'Q: ' + q['question'] + '\nA:'
+        solution = q['answer']
+        generated_answer_full = generate_answer(model, tokenizer, question)
+        generated_answer = generated_answer_full.replace(question, '').strip()
+
+        evaluation = "<True>" if generated_answer.strip() == solution.strip() else "<False>"
+        new_data = {'question': q['question'], 'solution': solution, 'generated_answer': generated_answer, 'evaluation': evaluation}
+        f.write(json.dumps(new_data) + '\n')
+        i += 1
+        print(f'question {i} finished')
+    f.close()
 
 
 if __name__ == '__main__':
@@ -178,8 +182,8 @@ if __name__ == '__main__':
     output_dir = 'finetuned_llama3_8b_adalora'
 
     # Finetune and evaluate llama3 8B on gsm8k
-    #finetune_lora(model_name, "/home/ubuntu/llama3/A-Survey-to-LoRa-Variant/GSM8k", output_dir)
-    evaluate_lora(model_name, output_dir, '/home/ubuntu/llama3/A-Survey-to-LoRa-Variant/GSM8k', 'gsm8k_evaluation.jsonl')
+    finetune_lora(model_name, "/home/ubuntu/llama3/A-Survey-to-LoRa-Variant/GSM8k", output_dir)
+    evaluate_gsm8k(output_dir, 'gsm8k_evaluation.jsonl')
 
     # Finetine and evaluate llama3 8B on gsm-plus
     #finetune_lora(model_name, "gsm-plus", output_dir)
