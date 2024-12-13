@@ -84,38 +84,5 @@ def evaluate_lora(model_dir, data_dir, output_file):
 
 
 if __name__ == '__main__':
-    pretrained_dir = 'finetuned_llama3_8b_lorafa_gsm-plus'
-    evaluate_lora(pretrained_dir, '/home/ubuntu/llama3/A-Survey-to-LoRa-Variant/GSM-plus', 'evaluation_result/GSM-plus-lorafa.jsonl')
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    pretrained_dir = 'finetuned_llama3_8b_adalora_gsm8k'
+    evaluate_lora(pretrained_dir, '/home/ubuntu/llama3/A-Survey-to-LoRa-Variant/GSM8k', 'evaluation_result/GSM8k-adalora.jsonl')

@@ -230,8 +230,8 @@ def generate_answer(model, tokenizer, prompt: str, max_new_tokens: int = 512) ->
 
 if __name__ == "__main__":
     MODEL_NAME = "meta-llama/Meta-Llama-3-8B-Instruct"
-    OUTPUT_DIR = "finetuned_llama3_8b_lorafa_gsm8k"
-    DATA_DIR = "GSM8k"
+    OUTPUT_DIR = "finetuned_llama3_8b_lorafa_gsm-plus"
+    DATA_DIR = "GSM-plus"
     TOKEN_PATH = "access_token.txt"
     
     try:

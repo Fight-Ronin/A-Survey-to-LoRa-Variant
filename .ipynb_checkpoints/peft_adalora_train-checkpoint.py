@@ -6,8 +6,6 @@ from datasets import load_dataset
 from peft import LoraConfig, get_peft_model, AdaLoraConfig, PeftModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, DataCollatorWithPadding
 
-from huggingface_hub import login
-
 
 def load_local_dataset(directory):
     data_files = {
@@ -34,9 +32,8 @@ def finetune_lora(model_dir, data_dir, output_dir, init_r=128, target_r=8, lora_
 
     # Load Tokenizer and Model
     token = get_token_from_file('access_token.txt')
-    login(token=token)
-    tokenizer = AutoTokenizer.from_pretrained(model_dir)
-    model = AutoModelForCausalLM.from_pretrained(model_dir, torch_dtype=torch.bfloat16, device_map='auto')
+    tokenizer = AutoTokenizer.from_pretrained(model_dir, token=token)
+    model = AutoModelForCausalLM.from_pretrained(model_dir, torch_dtype=torch.bfloat16, device_map='auto', token=token)
     # Introduce padding tokens
     if tokenizer.pad_token is None:
         tokenizer.add_special_tokens({'pad_token': '[PAD]'})
