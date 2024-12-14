@@ -5,4 +5,6 @@ finetuned_llama3_8b_adalora_gsm8k/
 finetuned_llama3_8b_lorafa_gsm8k/
 finetuned_llama3_8b_adalora_gsm-plus/
 finetuned_llama3_8b_lorafa_gsm-plus/
+finetuned_llama3_8b_adalora_gsm-plus_v2/
+finetuned_llama3_8b_adalora_gsm8k_v2/
 *.npz

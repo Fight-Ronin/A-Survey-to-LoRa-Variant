@@ -1,20 +1,11 @@
-import os
 import json
 import torch
 import ollama
-from datasets import load_dataset
-from peft import LoraConfig, get_peft_model, AdaLoraConfig, PeftModel
+from peft import PeftModel
 from transformers import AutoTokenizer, AutoModelForCausalLM, Trainer, TrainingArguments, DataCollatorWithPadding
+from utils import load_local_dataset
 
 
-def load_local_dataset(directory):
-    data_files = {
-        'train': os.path.join(directory, 'train.jsonl'),
-        'validation': os.path.join(directory, 'valid.jsonl'),
-        'test': os.path.join(directory, 'test.jsonl'),
-    }
-    dataset = load_dataset('json', data_files=data_files)
-    return dataset
 
 
 def get_token_from_file(file_path):
@@ -34,7 +25,10 @@ def evaluate_lora(model_dir, data_dir, output_file):
     # Reload finetuned model and adapter
     token = get_token_from_file('access_token.txt')
     tokenizer = AutoTokenizer.from_pretrained(model_dir, token=token)
+    if tokenizer.pad_token is None:
+        tokenizer.add_special_tokens({'pad_token': '[PAD]'})
     base_model = AutoModelForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct", torch_dtype=torch.bfloat16, device_map='auto', token=token)
+    base_model.resize_token_embeddings(len(tokenizer))
     model = PeftModel.from_pretrained(base_model, model_dir)
 
     if tokenizer.pad_token is None:
@@ -84,5 +78,5 @@ def evaluate_lora(model_dir, data_dir, output_file):
 
 
 if __name__ == '__main__':
-    pretrained_dir = 'finetuned_llama3_8b_adalora_gsm8k'
-    evaluate_lora(pretrained_dir, '/home/ubuntu/llama3/A-Survey-to-LoRa-Variant/GSM8k', 'evaluation_result/GSM8k-adalora.jsonl')
+    pretrained_dir = 'finetuned_llama3_8b_adalora_gsm8k_v2'
+    evaluate_lora(pretrained_dir, '/home/ubuntu/llama3/A-Survey-to-LoRa-Variant/GSM8k', 'evaluation_result/GSM8k-adalora-v2.jsonl')

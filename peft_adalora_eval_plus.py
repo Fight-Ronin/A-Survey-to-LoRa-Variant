@@ -34,7 +34,11 @@ def evaluate_lora(model_dir, data_dir, output_file):
     # Reload finetuned model and adapter
     token = get_token_from_file('access_token.txt')
     tokenizer = AutoTokenizer.from_pretrained(model_dir, token=token)
-    base_model = AutoModelForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct", torch_dtype=torch.bfloat16, device_map='auto', token=token)
+    if tokenizer.pad_token is None:
+        tokenizer.add_special_tokens({'pad_token': '[PAD]'})
+    base_model = AutoModelForCausalLM.from_pretrained("meta-llama/Meta-Llama-3-8B-Instruct", torch_dtype=torch.bfloat16,
+                                                      device_map='auto', token=token)
+    base_model.resize_token_embeddings(len(tokenizer))
     model = PeftModel.from_pretrained(base_model, model_dir)
 
     if tokenizer.pad_token is None:
@@ -84,8 +88,8 @@ def evaluate_lora(model_dir, data_dir, output_file):
 
 
 if __name__ == '__main__':
-    pretrained_dir = 'finetuned_llama3_8b_adalora_gsm-plus'
-    evaluate_lora(pretrained_dir, '/home/ubuntu/llama3/A-Survey-to-LoRa-Variant/GSM-plus', 'evaluation_result/GSM-plus-adalora.jsonl')
+    pretrained_dir = 'finetuned_llama3_8b_adalora_gsm-plus_v2'
+    evaluate_lora(pretrained_dir, '/home/ubuntu/llama3/A-Survey-to-LoRa-Variant/GSM-plus', 'evaluation_result/GSM-plus-adalora-v2.jsonl')
 
 
 

@@ -26,7 +26,7 @@ def get_token_from_file(file_path):
 
 
 def finetune_lora(model_dir, data_dir, output_dir, init_r=128, target_r=8, lora_alpha=32, lora_dropout=0.1,
-                  tinit=False, deltaT=10, beta1=0.9, beta2=0.999):
+                  tinit=0, t_final=0, deltaT=10, beta1=0.9, beta2=0.999):
     # Load Dataset
     ds = load_local_dataset(data_dir)
     train_ds = ds['train']
@@ -48,11 +48,13 @@ def finetune_lora(model_dir, data_dir, output_dir, init_r=128, target_r=8, lora_
         target_r = target_r,
         lora_alpha = lora_alpha,
         lora_dropout = lora_dropout,
-        beta1 = beta1,
-        beta2 = beta2,
+        beta1 = 0.85,
+        beta2=0.85,
         tinit=tinit,
+        tfinal=t_final,
         deltaT=deltaT,
         task_type='CAUSAL_LM',
+        total_step=len(train_ds)/4
     )
     model = get_peft_model(model, peft_config)
 
@@ -116,7 +118,7 @@ def finetune_lora(model_dir, data_dir, output_dir, init_r=128, target_r=8, lora_
 
 if __name__ == '__main__':
     model_name = "meta-llama/Meta-Llama-3-8B-Instruct"
-    output_dir = 'finetuned_llama3_8b_adalora_gsm-plus'
+    output_dir = 'finetuned_llama3_8b_adalora_gsm-plus_v2'
 
     # Finetune and evaluate llama3 8B on gsm8k
     finetune_lora(model_name, "/home/ubuntu/llama3/A-Survey-to-LoRa-Variant/GSM-plus", output_dir)
