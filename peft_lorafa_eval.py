@@ -59,7 +59,7 @@ def evaluate_lora(model_dir, data_dir, output_file):
 
             ollama_model = 'llama3:8b'
             prompt = f''' 
-                    You are given a predicted answer and a ground truth solution, determinant whether the predicted answer match the ground truth answer. End your response with <True> or <False>
+                    You are given a predicted answer and a ground truth solution, determine whether the predicted answer match the ground truth answer. End your response with <True> or <False>
                     predicted answer: {generated_answer_full}
                     ground truth solution:
                     {answer_part}
